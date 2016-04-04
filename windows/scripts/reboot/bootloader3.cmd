@@ -1,0 +1,1 @@
+%adb% shell reboot bootloader

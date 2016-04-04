@@ -1,0 +1,1 @@
+%fastboot% oem powerdown

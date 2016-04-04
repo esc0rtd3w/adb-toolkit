@@ -1,0 +1,175 @@
+@echo off
+
+title Android ADB Toolkit                                        -[ adbtoolkit.com ]-
+
+
+:reset
+
+:: Get Windows OS Version
+%check_os%
+
+if not exist "%dl_temp%\build_prop" md "%dl_temp%\build_prop"
+
+
+:checkadb
+%tasklist% | find "adb.exe"
+
+if %errorlevel%==0 goto main
+if %errorlevel%==1 %getadbroot%
+
+
+goto main
+
+
+:main
+
+echo Getting device info....
+echo.
+echo.
+echo IF YOU SEE THIS MESSAGE LONGER THAN 10 SECONDS PLEASE CLOSE AND RESTART!
+echo.
+echo.
+echo MAKE SURE "USB DEBUGGING" IS TURNED ON AND YOU HAVE DRIVERS INSTALLED!
+echo.
+echo.
+
+::---------------------------------------------------------------
+:: Set Auto State
+
+for /f "delims=" %%a in ('adb get-state ^| findstr /v "blankstring"') do @set autostate=%%a
+
+if %autostate%==device set autostate=Online
+if %autostate%==unknown set autostate=Offline
+if %autostate%==bootloader set autostate=Bootloader
+
+if %autostate%==Bootloader goto end2
+if %autostate%==Offline goto end2
+::---------------------------------------------------------------
+
+
+::---------------------------------------------------------------
+:: Get build.prop properties
+call "scripts\build_prop.cmd"
+::---------------------------------------------------------------
+
+
+::---------------------------------------------------------------
+:: Set Auto Serial Number
+for /f "delims=" %%d in ('adb get-serialno ^| findstr /v "blankstring"') do @set autoserial=%%d
+::---------------------------------------------------------------
+
+
+::---------------------------------------------------------------
+:: Get Root Status
+
+set checksu=""
+::for /f "tokens=1 delims=, " %%a in ( 'adb shell id' ) do ( set checksu="%%a" )
+::if /i %checksu% == "uid=0(root)" ( set rootstatus=1)
+::if /i not %checksu% == "uid=0(root)" ( set rootstatus=0)
+
+for /f "tokens=*" %%i in ('adb shell id ^| find "uid=0"') do set checksu=%%i
+if "%checksu%." neq "." set rootaccess=1
+
+
+:: Get SU Status
+::set rootaccess=1
+
+:: Temp fix for determining SuperUser status
+::if "%autosuver%"=="/system/bin/sh: /system/xbin/su: not found" set rootaccess=0
+::if "%autosuver%"=="/system/xbin/su: not found" set rootaccess=0
+::if "%autosuver%"=="/system/xbin/sh: not found" set rootaccess=0
+
+if %rootaccess%==1 set rootstatus=Rooted
+if %rootaccess%==0 set rootstatus=Unrooted
+
+:: Get SU version if rooted
+if %rootstatus%==Rooted goto getsuver
+
+:: Setup version number for output on info bar
+::if %rootstatus%==Rooted set suversion=%autosuver%
+::if %rootstatus%==Unrooted set suversion=Unrooted
+
+set suversion=Unrooted
+
+goto continue
+
+
+:getsuver
+:: Get SU Version Number
+::for /f "delims=" %%e in ('adb shell /system/xbin/su -v ^| findstr /v "blankstring"') do @set autosuver=%%e
+
+set suversion=%autosuver%
+
+goto continue
+::---------------------------------------------------------------
+
+
+
+:continue
+::---------------------------------------------------------------
+:: Modify variable output
+if %autostate%==device set autostate=Online
+if %autostate%==unknown set autostate=Offline
+if %autostate%==bootloader set autostate=Bootloader
+
+::if %autoserial%==unknown set autoserial=Unavailable
+if %autoserial%==unknown set autoserial=N/A
+::---------------------------------------------------------------
+
+
+::---------------------------------------------------------------
+:: Get Hboot Version
+::adb shell getprop ro.bootloader
+::---------------------------------------------------------------
+
+
+::---------------------------------------------------------------
+:: Multi Device Handling
+::set multicheck=""
+::for /f "tokens=1-4" %%g in ( 'adb devices' ) do ( set multicheck="%%g %%h %%i %%j" ) 
+::if /i %multicheck% == %multistatus% ( set multicheck=single)
+::if /i not %multicheck% == %multistatus% ( set multicheck=multi)
+
+::echo %multicheck%
+::pause
+::---------------------------------------------------------------
+
+
+
+:end
+
+
+:: Getting 2nd row Info Bar
+%get_device_sw%
+
+:: Call this file to correct display text for Manufacturer name pulled from build.prop
+%mfr_fix%
+
+:: Call this file to correct display text for CPU name pulled from build.prop
+%cpu_fix%
+
+::---------------------------------------------------------------
+:: Uncomment next line to test on UNROOTED status
+::set rootstatus=Unrooted
+::---------------------------------------------------------------
+
+
+::---------------------------------------------------------------
+:: Fixes display problems on info bar when no device is connected
+if [%suversion%]==[] set suversion=N/A
+::set suversion=N/A
+::---------------------------------------------------------------
+
+
+::---------------------------------------------------------------
+:: Replaced with top fix to check ADB access
+:: Getting ADB Root Access
+if not %rootstatus%==Unrooted %getadbroot%
+if %rootstatus%==Unrooted %adbstart%
+::---------------------------------------------------------------
+
+
+:end2
+
+
+
