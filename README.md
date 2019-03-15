@@ -8,5 +8,6 @@ adbtoolkit.com
 
 Links to all current drivers and code:
 
-https://mega.nz/#F!PMQRBSgR!dr4lUZDP72j6lhCcjTwVHg
+Full Archive: [link soon]
+Driverpack: http://www.mediafire.com/file/9jc9p6vzj1gpcjf/adb-toolkit-driverpack-20180611.iso/file
 
